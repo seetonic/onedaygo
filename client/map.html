@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Explore an interactive map of tourist destinations within 25 km of Deurumpitiya on OneDayGo.">
+  <title>Map — OneDayGo</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗺️</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Full height map minus navbar */
+    #map {
+      height: calc(100vh - 64px);
+      /* 64px is h-16 navbar */
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 font-sans text-gray-800 flex flex-col min-h-screen overflow-hidden">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-md sticky top-0 z-50 h-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div class="flex justify-between h-full">
+        <div class="flex items-center">
+          <a href="index.html" class="flex-shrink-0 flex items-center">
+            <span class="text-2xl font-bold text-green-700">OneDayGo</span>
+          </a>
+          <div class="hidden md:flex ml-6 space-x-8 h-full">
+            <a href="index.html"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Home</a>
+            <a href="map.html"
+              class="border-green-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Map</a>
+            <a href="itinerary.html"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Itinerary</a>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="hidden md:flex items-center" id="authSection">
+            <!-- Populated by auth.js -->
+          </div>
+          <!-- Mobile menu button -->
+          <div class="flex items-center md:hidden">
+            <button onclick="document.getElementById('mobileNav').classList.toggle('hidden')"
+              class="text-gray-500 hover:text-gray-700 focus:outline-none">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobileNav" class="hidden md:hidden bg-white border-t border-gray-200 px-2 pt-2 pb-3 space-y-1">
+      <a href="index.html"
+        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Home</a>
+      <a href="map.html" class="block px-3 py-2 rounded-md text-base font-medium text-green-700 bg-green-50">Map</a>
+      <a href="itinerary.html"
+        class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Itinerary</a>
+      <div id="authSectionMobile" class="pt-4 pb-2 border-t border-gray-200 mt-2"></div>
+    </div>
+  </nav>
+
+  <main class="flex-grow w-full relative">
+    <div id="map"></div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/map.js"></script>
+  <script>
+    // Load Google Maps dynamically so the API key is never hardcoded in source.
+    fetch('/api/config/maps-key')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) throw new Error('Could not load map config');
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+      })
+      .catch(err => {
+        console.error('Failed to load Google Maps:', err);
+        document.getElementById('map').innerHTML =
+          '<p style="padding:2rem;color:#b91c1c">Map unavailable. Please try again later.</p>';
+      });
+  </script>
+</body>
+
+</html>
