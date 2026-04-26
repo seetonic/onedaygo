@@ -160,8 +160,14 @@ const seed = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB...');
 
-    await Place.deleteMany({});
-    console.log('Existing places cleared.');
+    // Safety check: only seed if the database is empty
+    const existingCount = await Place.countDocuments();
+    if (existingCount > 0) {
+      console.log(`Database already has ${existingCount} place(s). Skipping seed to preserve existing data.`);
+      console.log('To force re-seed, manually clear the places collection first.');
+      await mongoose.disconnect();
+      process.exit(0);
+    }
 
     await Place.insertMany(places);
     console.log('Seeding complete — 10 places added.');
