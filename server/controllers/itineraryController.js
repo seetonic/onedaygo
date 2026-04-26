@@ -30,7 +30,7 @@ async function getTravelTime(originLat, originLng, destLat, destLng) {
 const getItinerary = async (req, res) => {
   try {
     const itinerary = await Itinerary.findOne({ userId: req.user._id })
-      .populate('places.placeId', 'name category photos distanceFromBase');
+      .populate('places.placeId', 'name category photos distanceFromBase coordinates');
       
     if (!itinerary) {
       return res.json({ success: true, data: {} });
@@ -104,7 +104,7 @@ const getItinerary = async (req, res) => {
         }
       },
       { returnDocument: 'after', upsert: true }
-    ).populate('places.placeId', 'name category photos distanceFromBase');
+    ).populate('places.placeId', 'name category photos distanceFromBase coordinates');
     
     res.json({ success: true, data: itinerary });
   } catch (error) {

@@ -79,6 +79,7 @@
         <div id="savedPlanContainer">
           <!-- Populated by JS -->
         </div>
+        <div id="itineraryMap" class="w-full h-80 mt-6 rounded-lg border border-gray-300 shadow-sm hidden"></div>
       </div>
 
     </div>
@@ -93,5 +94,47 @@
 
   <script src="js/auth.js"></script>
   <script src="js/itinerary.js"></script>
+  <script>
+    fetch('/api/config/maps-key')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) throw new Error('Could not load map config');
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initItineraryMap`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+      })
+      .catch(err => {
+        console.error('Failed to load Google Maps:', err);
+        document.getElementById('itineraryMap').innerHTML =
+          '<p style="padding:2rem;color:#b91c1c">Map unavailable. Please try again later.</p>';
+        document.getElementById('itineraryMap').classList.remove('hidden');
+      });
+      
+    // Global map variable
+    window.itineraryMapInstance = null;
+    window.directionsService = null;
+    window.directionsRenderer = null;
+    
+    function initItineraryMap() {
+      // Called when Maps API loads. 
+      // If data is already loaded by loadSavedPlan, it will use these services.
+      window.directionsService = new google.maps.DirectionsService();
+      window.directionsRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true, // We'll add our own custom numbered markers
+        polylineOptions: {
+          strokeColor: '#16a34a', // green-600
+          strokeWeight: 4,
+          strokeOpacity: 0.8
+        }
+      });
+      
+      // If we already have the route data queued
+      if (window.pendingRouteData) {
+        drawMapRoute(window.pendingRouteData);
+      }
+    }
+  </script>
 </body>
 </html>

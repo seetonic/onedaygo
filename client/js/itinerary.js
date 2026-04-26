@@ -260,4 +260,101 @@ function renderSavedPlan(itinerary) {
   `;
   
   container.innerHTML = html;
+
+  // Render map
+  if (window.directionsService && window.directionsRenderer) {
+    window.drawMapRoute(itinerary);
+  } else {
+    window.pendingRouteData = itinerary;
+  }
 }
+
+window.drawMapRoute = function(itinerary) {
+  const mapContainer = document.getElementById('itineraryMap');
+  if (!mapContainer) return;
+  mapContainer.classList.remove('hidden');
+
+  const startPoint = itinerary.startingPoint.coordinates; // [lng, lat]
+  const origin = new google.maps.LatLng(startPoint[1], startPoint[0]);
+  
+  const places = itinerary.places;
+  if (!places || places.length === 0) return;
+
+  const destPoint = places[places.length - 1].placeId.coordinates.coordinates; // [lng, lat]
+  const destination = new google.maps.LatLng(destPoint[1], destPoint[0]);
+
+  const waypoints = [];
+  for (let i = 0; i < places.length - 1; i++) {
+    const coords = places[i].placeId.coordinates.coordinates;
+    waypoints.push({
+      location: new google.maps.LatLng(coords[1], coords[0]),
+      stopover: true
+    });
+  }
+
+  if (!window.itineraryMapInstance) {
+    window.itineraryMapInstance = new google.maps.Map(mapContainer, {
+      zoom: 10,
+      center: origin,
+      mapTypeControl: false,
+      streetViewControl: false
+    });
+    window.directionsRenderer.setMap(window.itineraryMapInstance);
+  }
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    waypoints: waypoints,
+    travelMode: 'DRIVING'
+  };
+
+  window.directionsService.route(request, (result, status) => {
+    if (status === 'OK') {
+      window.directionsRenderer.setDirections(result);
+      
+      if (window.routeMarkers) {
+        window.routeMarkers.forEach(m => m.setMap(null));
+      }
+      window.routeMarkers = [];
+
+      // Start Marker
+      window.routeMarkers.push(new google.maps.Marker({
+        position: origin,
+        map: window.itineraryMapInstance,
+        label: { text: 'S', color: 'white', fontWeight: 'bold' },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: '#dc2626',
+          fillOpacity: 1,
+          strokeColor: 'white',
+          strokeWeight: 2,
+          scale: 12
+        },
+        title: itinerary.startingPoint.name
+      }));
+
+      // Place Markers
+      places.forEach((stop, idx) => {
+        const coords = stop.placeId.coordinates.coordinates;
+        window.routeMarkers.push(new google.maps.Marker({
+          position: new google.maps.LatLng(coords[1], coords[0]),
+          map: window.itineraryMapInstance,
+          label: { text: (idx + 1).toString(), color: 'white', fontWeight: 'bold' },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#16a34a',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2,
+            scale: 12
+          },
+          title: stop.placeId.name
+        }));
+      });
+
+    } else {
+      console.error('Directions request failed due to ' + status);
+    }
+  });
+};
